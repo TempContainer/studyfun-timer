@@ -139,8 +139,9 @@ class TimerApp:
                     d = json.load(fp)
                     day = d.get("date")
                     study = d.get("total_study", 0)
+                    ent = d.get("total_entertainment", 0)
                     if day:
-                        day_map[day] = study
+                        day_map[day] = (study, ent)
             except Exception as e:
                 print(f"Error reading file {f}: {e}")
                 
@@ -148,7 +149,7 @@ class TimerApp:
         if self.tracker.current_activity:
             today_str = date.today().strftime(DATE_FORMAT)
             study, ent = self.tracker.get_totals()
-            day_map[today_str] = study
+            day_map[today_str] = (study, ent)
                 
         today = date.today()
         days = []
@@ -163,7 +164,7 @@ class TimerApp:
         
         # obatin the study time for each day
         day_strs = [d.strftime(DATE_FORMAT) for d in days]
-        study_list = [day_map.get(ds, 0) for ds in day_strs]
+        study_list = [day_map.get(ds, (0, 0))[0] for ds in day_strs]
         
         max_study = max(study_list) if any(study_list) else 1
         
@@ -224,7 +225,7 @@ class TimerApp:
             
             if date_obj is not None:
                 date_str = date_obj.strftime(DATE_FORMAT)
-                study_sec = day_map.get(date_str, 0)
+                study_sec, ent_sec = day_map.get(date_str, (0, 0))
                 
                 ratio = study_sec / max_study if max_study > 0 else 0
                 
@@ -246,16 +247,6 @@ class TimerApp:
                 rect = self.heatmap_canvas.create_rectangle(x0, y0, x1, y1, 
                                                          fill=color, outline="", width=0)
                 
-                ent_sec = 0
-                try:
-                    file_path = get_data_file_path(date_obj)
-                    if os.path.exists(file_path):
-                        with open(file_path, 'r') as f:
-                            data = json.load(f)
-                            ent_sec = data.get("total_entertainment", 0)
-                except Exception:
-                    pass
-                    
                 total_day = study_sec + ent_sec
                 study_percent = (study_sec / total_day * 100) if total_day > 0 else 0
                 ent_percent = (ent_sec / total_day * 100) if total_day > 0 else 0
